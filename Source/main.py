@@ -79,3 +79,36 @@ def check_Object(_map, row, col):
         _ghost.append(Player(row, col, IMAGE_GHOST[len(_ghost) % len(IMAGE_GHOST)]))
         _ghost_Position.append([row, col])
 
+def initData() -> None:
+    global N, M, _map, _food_Position, _food, _road, _wall, _ghost, _visited, Score, _state_PacMan, _ghost_Position
+    N = M = Score = _state_PacMan = 0
+    _map = []
+    _wall = []
+    _road = []
+    _food = []
+    _ghost = []
+    _food_Position = []
+    _ghost_Position = []
+
+    readMapInFile(map_name=Map_name)
+    _visited = [[0 for _ in range(M)] for _ in range(N)]
+
+    for row in range(N):
+        for col in range(M):
+            check_Object(_map, row, col)
+
+
+def Draw(_screen) -> None:
+    for wall in _wall:
+        wall.draw(_screen)
+    for road in _road:
+        road.draw(_screen)
+    for food in _food:
+        food.draw(_screen)
+    for ghost in _ghost:
+        ghost.draw(_screen)
+
+    PacMan.draw(_screen)
+
+    text_surface = my_font.render('Score: {Score}'.format(Score=Score), False, RED)
+    screen.blit(text_surface, (0, 0))
