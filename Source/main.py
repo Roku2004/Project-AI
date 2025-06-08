@@ -168,3 +168,221 @@ def randomPacManNewPos(_map, row, col, _N, _M):
         new_r, new_c = d_r + row, d_c + col
         if isValid2(_map, new_r, new_c, _N, _M):
             return [new_r, new_c]
+def startGame() -> None:
+    global _map, _visited, Score
+    _ghost_new_position = []
+    result = []
+    new_PacMan_Pos: list = []
+    initData()
+    pac_can_move = True
+
+    done = False
+    is_moving = False
+    timer = 0
+
+    status = 0
+    delay = 100
+
+    # ----------------- Run pygame
+    while not done:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                showMenu()
+                return
+
+        if delay > 0:
+            delay -= 1
+        # handle move step by step
+        if delay <= 0:
+            if is_moving: # Pacman đang di chuyển
+                timer += 1 
+
+                # Ghost move
+                if len(_ghost_new_position) > 0:
+                    for idx in range(len(_ghost)):
+                        [old_row_Gho, old_col_Gho] = _ghost[idx].getRC()
+                        [new_row_Gho, new_col_Gho] = _ghost_new_position[idx]
+
+                        if old_row_Gho < new_row_Gho:
+                            _ghost[idx].move(1, 0)  #đi xuống
+                        elif old_row_Gho > new_row_Gho:
+                            _ghost[idx].move(-1, 0) #đi lên
+                        elif old_col_Gho < new_col_Gho:
+                            _ghost[idx].move(0, 1) #đi sang phải
+                        elif old_col_Gho > new_col_Gho:
+                            _ghost[idx].move(0, -1) #đi sang trái
+
+                        if timer >= SIZE_WALL: 
+                            _ghost[idx].setRC(new_row_Gho, new_col_Gho)
+
+                            _map[old_row_Gho][old_col_Gho] = EMPTY
+                            _map[new_row_Gho][new_col_Gho] = MONSTER
+
+                            # check touch Food
+                            for index in range(len(_food)):
+                                [row_food, col_food] = _food[index].getRC()
+                                if row_food == old_row_Gho and col_food == old_col_Gho:
+                                    _map[row_food][col_food] = FOOD
+
+                # Pacman move
+                if len(new_PacMan_Pos) > 0:
+                    [old_row_Pac, old_col_Pac] = PacMan.getRC()
+                    [new_row_Pac, new_col_Pac] = new_PacMan_Pos
+
+                    if old_row_Pac < new_row_Pac:
+                        PacMan.move(1, 0) #đi xuống
+                    elif old_row_Pac > new_row_Pac:
+                        PacMan.move(-1, 0) #đi lên
+                    elif old_col_Pac < new_col_Pac:
+                        PacMan.move(0, 1) #đi sang phải
+                    elif old_col_Pac > new_col_Pac:
+                        PacMan.move(0, -1) #đi sang trái
+
+                    if timer >= SIZE_WALL or PacMan.touch_New_RC(new_row_Pac, new_col_Pac):
+                        is_moving = False
+                        PacMan.setRC(new_row_Pac, new_col_Pac)
+                        Score -= 1
+
+                        # check touch Food
+                        for idx in range(len(_food)):
+                            [row_food, col_food] = _food[idx].getRC()
+                            if row_food == new_row_Pac and col_food == new_col_Pac:
+                                _map[row_food][col_food] = EMPTY
+                                _food.pop(idx)
+                                _food_Position.pop(idx)
+                                Score += 20
+                                break
+                        new_PacMan_Pos = []
+
+                if check_collision_ghost(_ghost):
+                    pac_can_move = False
+                    done = True
+                    status = -1 # PacMan thua
+
+                if len(_food_Position) == 0:
+                    status = 1 # PacMan thắng
+                    done = True
+
+                if timer >= SIZE_WALL:
+                    is_moving = False
+            else:
+                # _type = [0:don't move(default), 1:Random, 2:A*]
+                if Level == 3:
+                    _ghost_new_position = generate_Ghost_new_position(_ghost, _type=1)
+                elif Level == 4:
+                    _ghost_new_position = generate_Ghost_new_position(_ghost, _type=2)
+                else:
+                    _ghost_new_position = generate_Ghost_new_position(_ghost, _type=0)
+
+                is_moving = True
+                timer = 0
+
+                if not pac_can_move:
+                    continue
+
+                [row, col] = PacMan.getRC()
+
+                # cài đặt thuật toán ở đây, thay đổi ALGORITHM trong file constants.py
+                # thuật toán chỉ cần trả về vị trí mới theo format [new_row, new_col] cho biến new_PacMan_Pos
+                # VD: new_PacMan_Pos = [4, 5]
+                # thuật toán sẽ được cài đặt trong folder Algorithms
+
+                search = SearchAgent(_map, _food_Position, row, col, N, M)
+                if Level == 1 or Level == 2:
+                    if len(result) <= 0:
+                        result = search.execute(ALGORITHMS=LEVEL_TO_ALGORITHM["LEVEL1"])
+                        if len(result) > 0:
+                            result.pop(0)
+                            new_PacMan_Pos = result[0]
+
+                    elif len(result) > 1:
+                        result.pop(0)
+                        new_PacMan_Pos = result[0]
+
+                elif Level == 3 and len(_food_Position) > 0:
+                    new_PacMan_Pos = search.execute(ALGORITHMS=LEVEL_TO_ALGORITHM["LEVEL3"], visited=_visited)
+                    _visited[row][col] += 1
+
+                elif Level == 4 and len(_food_Position) > 0:
+                    new_PacMan_Pos = search.execute(ALGORITHMS=LEVEL_TO_ALGORITHM["LEVEL4"], depth=4, Score=Score)
+
+                if len(_food_Position) > 0 and (len(new_PacMan_Pos) == 0 or [row, col] == new_PacMan_Pos):
+                    new_PacMan_Pos = randomPacManNewPos(_map, row, col, N, M)
+                if len(new_PacMan_Pos) > 0:
+                    change_direction_PacMan(new_PacMan_Pos[0], new_PacMan_Pos[1])
+                    if check_collision_ghost(_ghost, new_PacMan_Pos[0], new_PacMan_Pos[1]):
+                        pac_can_move = False
+                        done = True
+                        status = -1
+
+        # ------------------------------------------------------
+
+        screen.fill(BLACK)
+        Draw(screen)
+        pygame.display.flip()
+        clock.tick(FPS)
+
+    handleEndGame(status)
+
+
+done_2 = False
+
+
+def handleEndGame(status: int):
+    global done_2
+    done_2 = False
+    bg = pygame.image.load("images/gameover.png")
+    bg = pygame.transform.scale(bg, (WIDTH, HEIGHT))
+    bg_w = pygame.image.load("images/win1.png")
+    bg_w = pygame.transform.scale(bg_w, (WIDTH, HEIGHT))
+
+    def clickContinue():
+        global done_2
+        done_2 = True
+
+    def clickQuit():
+        pygame.quit()
+        sys.exit(0)
+
+    btnContinue = Button(WIDTH // 2 - 300, HEIGHT // 2 - 50, 200, 100, screen, "CONTINUE", clickContinue)
+    btnQuit = Button(WIDTH // 2 + 50, HEIGHT // 2 - 50, 200, 100, screen, "QUIT", clickQuit)
+
+    delay = 100
+    while not done_2:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit(0)
+
+        if delay > 0:
+            delay -= 1
+            pygame.display.flip()
+            clock.tick(FPS)
+            continue
+
+        if status == -1:
+            screen.blit(bg, (0, 0))
+        else:
+            screen.blit(bg_w, (0, 0))
+            text_surface = my_font_2.render('Your Score: {Score}'.format(Score=Score), False, RED)
+            screen.blit(text_surface, (WIDTH // 4 - 65, 10))
+
+        btnQuit.process()
+        btnContinue.process()
+
+        pygame.display.flip()
+        clock.tick(FPS)
+
+    showMenu()
+
+
+def showMenu():
+    _menu = Menu(screen)
+    global Level, Map_name
+    [Level, Map_name] = _menu.run()
+    startGame()
+
+
+if __name__ == '__main__':
+    showMenu()
+    pygame.quit()
