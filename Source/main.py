@@ -112,3 +112,38 @@ def Draw(_screen) -> None:
 
     text_surface = my_font.render('Score: {Score}'.format(Score=Score), False, RED)
     screen.blit(text_surface, (0, 0))
+
+def generate_Ghost_new_position(_ghost, _type: int = 0) -> list[list[int]]:
+    _ghost_new_position = []
+    if _type == 1:
+        for idx in range(len(_ghost)):
+            [row, col] = _ghost[idx].getRC()
+
+            rnd = random.randint(0, 3)
+            new_row, new_col = row + DDX[rnd][0], col + DDX[rnd][1]
+            while not isValid2(_map, new_row, new_col, N, M):
+                rnd = random.randint(0, 3)
+                new_row, new_col = row + DDX[rnd][0], col + DDX[rnd][1]
+
+            _ghost_new_position.append([new_row, new_col])
+
+    # update latest
+    elif _type == 2:
+        for idx in range(len(_ghost)):
+            [start_row, start_col] = _ghost[idx].getRC()
+            [end_row, end_col] = PacMan.getRC()
+            _ghost_new_position.append(Ghost_move_level4(_map, start_row, start_col, end_row, end_col, N, M))
+
+    return _ghost_new_position
+
+
+def check_collision_ghost(_ghost, pac_row=-1, pac_col=-1) -> bool:
+    Pac_pos = [pac_row, pac_col]
+    if pac_row == -1:
+        Pac_pos = PacMan.getRC()
+    for g in _ghost:
+        Ghost_pos = g.getRC()
+        if Pac_pos == Ghost_pos:
+            return True
+
+    return False
