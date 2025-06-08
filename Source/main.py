@@ -147,3 +147,24 @@ def check_collision_ghost(_ghost, pac_row=-1, pac_col=-1) -> bool:
             return True
 
     return False
+
+def change_direction_PacMan(new_row, new_col):
+    global PacMan, _state_PacMan
+    [current_row, current_col] = PacMan.getRC()
+    _state_PacMan = (_state_PacMan + 1) % len(IMAGE_PACMAN)
+
+    if new_row > current_row:
+        PacMan.change_state(-90, IMAGE_PACMAN[_state_PacMan])
+    elif new_row < current_row:
+        PacMan.change_state(90, IMAGE_PACMAN[_state_PacMan])
+    elif new_col > current_col:
+        PacMan.change_state(0, IMAGE_PACMAN[_state_PacMan])
+    elif new_col < current_col:
+        PacMan.change_state(180, IMAGE_PACMAN[_state_PacMan])
+
+
+def randomPacManNewPos(_map, row, col, _N, _M):
+    for [d_r, d_c] in DDX:
+        new_r, new_c = d_r + row, d_c + col
+        if isValid2(_map, new_r, new_c, _N, _M):
+            return [new_r, new_c]
