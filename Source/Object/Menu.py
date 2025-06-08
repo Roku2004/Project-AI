@@ -7,7 +7,7 @@ from constants import FPS, WIDTH, HEIGHT, BLUE, BLACK, WALL, FOOD, WHITE, YELLOW
     IMAGE_PACMAN
 
 clock = pygame.time.Clock()
-bg = pygame.image.load("images/home_bg.png")
+bg = pygame.image.load("images/home.png")
 bg = pygame.transform.scale(bg, (WIDTH, HEIGHT))
 pygame.init()
 font = pygame.font.SysFont('Arial', 40)
