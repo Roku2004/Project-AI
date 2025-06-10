@@ -288,7 +288,7 @@ def startGame() -> None:
                 # thuật toán sẽ được cài đặt trong folder Algorithms
 
                 search = SearchAgent(_map, _food_Position, row, col, N, M)
-                if Level == 1 or Level == 2:
+                if Level == 1: #DFS
                     if len(result) <= 0:
                         result = search.execute(ALGORITHMS=LEVEL_TO_ALGORITHM["LEVEL1"])
                         if len(result) > 0:
@@ -298,12 +298,21 @@ def startGame() -> None:
                     elif len(result) > 1:
                         result.pop(0)
                         new_PacMan_Pos = result[0]
+                elif Level == 2: #BFS
+                    if len(result) <= 0:
+                        result = search.execute(ALGORITHMS=LEVEL_TO_ALGORITHM["LEVEL2"])
+                        if len(result) > 0:
+                            result.pop(0)
+                            new_PacMan_Pos = result[0]
 
-                elif Level == 3 and len(_food_Position) > 0:
+                    elif len(result) > 1:
+                        result.pop(0)
+                        new_PacMan_Pos = result[0]
+                elif Level == 3 and len(_food_Position) > 0: #Local Search
                     new_PacMan_Pos = search.execute(ALGORITHMS=LEVEL_TO_ALGORITHM["LEVEL3"], visited=_visited)
                     _visited[row][col] += 1
 
-                elif Level == 4 and len(_food_Position) > 0:
+                elif Level == 4 and len(_food_Position) > 0: #Minimax
                     new_PacMan_Pos = search.execute(ALGORITHMS=LEVEL_TO_ALGORITHM["LEVEL4"], depth=4, Score=Score)
 
                 if len(_food_Position) > 0 and (len(new_PacMan_Pos) == 0 or [row, col] == new_PacMan_Pos):
